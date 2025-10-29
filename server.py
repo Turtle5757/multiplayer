@@ -1,35 +1,36 @@
 from flask import Flask
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, send
+import eventlet
+
+eventlet.monkey_patch()  # Required for async support on Render
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 clients = {}  # sid -> username
 
-# When a client joins
-@socketio.on("join")
-def handle_join(username, sid=None):
-    # Use the sid passed by Socket.IO
-    sid = sid or request.sid
-    clients[sid] = username
-    print(f"{username} joined.")
-    socketio.emit("message", f"🔵 {username} joined the chat.")
+# Handle user joining
+@socketio.on('join')
+def handle_join(data):
+    username = data.get('username', 'Unknown')
+    clients[socketio.sid] = username
+    send(f"🔵 {username} joined the chat.", broadcast=True)
 
-# When a client sends a message
-@socketio.on("message")
-def handle_message(msg, sid=None):
-    sid = sid or request.sid
+# Handle incoming messages
+@socketio.on('message')
+def handle_message(data):
+    sid = socketio.sid
     username = clients.get(sid, "Unknown")
-    print(f"{username}: {msg}")
-    socketio.emit("message", f"{username}: {msg}", skip_sid=sid)
+    msg = data.get('msg', '')
+    send(f"{username}: {msg}", broadcast=True)
 
-# When a client disconnects
-@socketio.on("disconnect")
-def handle_disconnect(sid=None):
-    sid = sid or request.sid
+# Handle disconnect
+@socketio.on('disconnect')
+def handle_disconnect():
+    sid = socketio.sid
     username = clients.pop(sid, "Unknown")
-    print(f"{username} disconnected.")
-    socketio.emit("message", f"🔴 {username} left the chat.")
+    send(f"🔴 {username} left the chat.", broadcast=True)
 
-if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    socketio.run(app, host='0.0.0.0', port=5000)
