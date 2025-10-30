@@ -1,16 +1,14 @@
-import eventlet
-eventlet.monkey_patch()
-
 from flask import Flask, request
 from flask_socketio import SocketIO, send
+import eventlet
+
+eventlet.monkey_patch()  # Required for async support
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 clients = {}  # sid -> username
-
-# --- Socket Handlers ---
 
 @socketio.on('join')
 def handle_join(data):
@@ -32,6 +30,6 @@ def handle_disconnect():
     username = clients.pop(sid, "Unknown")
     send(f"🔴 {username} left the chat.", broadcast=True)
 
-# --- Run Server ---
 if __name__ == '__main__':
+    # 0.0.0.0 allows Render to expose the server publicly
     socketio.run(app, host='0.0.0.0', port=5000)
