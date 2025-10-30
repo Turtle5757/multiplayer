@@ -1,22 +1,59 @@
-from flask import Flask, render_template
-from flask_socketio import SocketIO, send
+import socket
+import threading
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret!'
-# Use threading mode instead of eventlet or gevent
-socketio = SocketIO(app, async_mode='threading')
+HOST = "0.0.0.0"
+PORT = 5555
 
-@app.route('/')
-def index():
-    return "Server is running!"
+clients = {}  # socket -> username
 
-@socketio.on('message')
-def handle_message(msg):
-    print(f"Message: {msg}")
-    send(msg, broadcast=True)
+def broadcast(message, sender_socket=None):
+    for client in clients:
+        if client != sender_socket:
+            try:
+                client.send(message.encode())
+            except:
+                client.close()
+                del clients[client]
 
-if __name__ == '__main__':
-    # Render sets PORT in env variables
-    import os
-    port = int(os.environ.get('PORT', 5000))
-    socketio.run(app, host='0.0.0.0', port=port)
+def handle_client(conn, addr):
+    try:
+        conn.send("USERNAME".encode())  # ask client for username
+        username = conn.recv(1024).decode().strip()
+        clients[conn] = username
+        broadcast(f"[{username}] joined the chat.")
+        print(f"[NEW CONNECTION] {username} ({addr}) connected.")
+    except:
+        conn.close()
+        return
+
+    while True:
+        try:
+            msg = conn.recv(1024)
+            if not msg:
+                break
+            decoded = msg.decode().strip()
+            if decoded.lower() == "quit":
+                conn.send("Goodbye!".encode())
+                break
+            broadcast(f"[{username}] {decoded}", conn)
+            print(f"[{username}] {decoded}")
+        except:
+            break
+
+    print(f"[DISCONNECTED] {username} ({addr})")
+    broadcast(f"[{username}] left the chat.")
+    del clients[conn]
+    conn.close()
+
+def start_server():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind((HOST, PORT))
+    s.listen()
+    print(f"[SERVER STARTED] Listening on {HOST}:{PORT}")
+    while True:
+        conn, addr = s.accept()
+        thread = threading.Thread(target=handle_client, args=(conn, addr))
+        thread.start()
+
+if __name__ == "__main__":
+    start_server()
