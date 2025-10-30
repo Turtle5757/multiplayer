@@ -1,61 +1,88 @@
+import socket
+import threading
 import tkinter as tk
-from tkinter import simpledialog, scrolledtext
-import socketio
+from tkinter import scrolledtext
+from tkinter import simpledialog, messagebox
 
-# Replace with your Render deployment URL
-SERVER_URL = "https://your-app.onrender.com"
+# --- Connect to server ---
+SERVER_IP = input("Enter server IP: ")
+PORT = 5555
 
-# Initialize SocketIO client
-sio = socketio.Client()
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+try:
+    client_socket.connect((SERVER_IP, PORT))
+except Exception as e:
+    print("Connection failed:", e)
+    exit(1)
 
-# Create main GUI window
+# --- GUI setup ---
 root = tk.Tk()
 root.title("Chat Client")
 
-# Chat messages display
 chat_display = scrolledtext.ScrolledText(root, state='disabled', width=50, height=20)
 chat_display.pack(padx=10, pady=10)
 
-# Message entry
-msg_entry = tk.Entry(root, width=50)
-msg_entry.pack(padx=10, pady=(0, 10))
+msg_entry = tk.Entry(root, width=40)
+msg_entry.pack(side=tk.LEFT, padx=(10,0), pady=(0,10))
 
-# Ask for username
-username = simpledialog.askstring("Username", "Enter your username:", parent=root)
-
-# Functions
-def send_message(event=None):
+# Send message function
+def send_message():
     msg = msg_entry.get()
-    if msg.strip():
-        sio.emit('message', {'msg': msg})
-        msg_entry.delete(0, tk.END)
+    if msg:
+        try:
+            client_socket.send(msg.encode())
+            msg_entry.delete(0, tk.END)
+        except:
+            messagebox.showerror("Error", "Failed to send message")
+            client_socket.close()
+            root.destroy()
 
-def display_message(msg):
-    chat_display.config(state='normal')
-    chat_display.insert(tk.END, msg + "\n")
-    chat_display.yview(tk.END)
-    chat_display.config(state='disabled')
+send_button = tk.Button(root, text="Send", command=send_message)
+send_button.pack(side=tk.LEFT, padx=(5,0), pady=(0,10))
 
-# SocketIO event handlers
-@sio.event
-def connect():
-    display_message("Connected to server.")
-    sio.emit('join', {'username': username})
+# Leave chat function
+def leave_chat():
+    try:
+        client_socket.send("quit".encode())
+    except:
+        pass
+    client_socket.close()
+    root.destroy()
 
-@sio.event
-def message(data):
-    display_message(data)
+leave_button = tk.Button(root, text="Leave", command=leave_chat)
+leave_button.pack(side=tk.LEFT, padx=(5,10), pady=(0,10))
 
-@sio.event
-def disconnect():
-    display_message("Disconnected from server.")
+# --- Ask for username ---
+def ask_username():
+    return simpledialog.askstring("Username", "Enter your username:", parent=root)
 
-# Bind enter key to send messages
-msg_entry.bind("<Return>", send_message)
+username = ask_username()
+if not username:
+    messagebox.showinfo("No username", "You must enter a username")
+    client_socket.close()
+    root.destroy()
+else:
+    # Send username to server
+    client_socket.recv(1024)  # wait for "USERNAME" prompt
+    client_socket.send(username.encode())
 
-# Connect to server
-sio.connect(SERVER_URL)
+# --- Receiving messages ---
+def receive_messages():
+    while True:
+        try:
+            msg = client_socket.recv(1024)
+            if not msg:
+                break
+            chat_display.config(state='normal')
+            chat_display.insert(tk.END, msg.decode() + '\n')
+            chat_display.yview(tk.END)
+            chat_display.config(state='disabled')
+        except:
+            break
+    client_socket.close()
+    root.quit()
 
-# Run GUI loop
+recv_thread = threading.Thread(target=receive_messages, daemon=True)
+recv_thread.start()
+
 root.mainloop()
-sio.disconnect()
