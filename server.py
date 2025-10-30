@@ -1,35 +1,22 @@
-from flask import Flask, request
+from flask import Flask, render_template
 from flask_socketio import SocketIO, send
-import eventlet
-
-eventlet.monkey_patch()  # Required for async support
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, cors_allowed_origins="*")
+# Use threading mode instead of eventlet or gevent
+socketio = SocketIO(app, async_mode='threading')
 
-clients = {}  # sid -> username
-
-@socketio.on('join')
-def handle_join(data):
-    username = data.get('username', 'Unknown')
-    sid = request.sid
-    clients[sid] = username
-    send(f"🔵 {username} joined the chat.", broadcast=True)
+@app.route('/')
+def index():
+    return "Server is running!"
 
 @socketio.on('message')
-def handle_message(data):
-    sid = request.sid
-    username = clients.get(sid, "Unknown")
-    msg = data.get('msg', '')
-    send(f"{username}: {msg}", broadcast=True)
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    sid = request.sid
-    username = clients.pop(sid, "Unknown")
-    send(f"🔴 {username} left the chat.", broadcast=True)
+def handle_message(msg):
+    print(f"Message: {msg}")
+    send(msg, broadcast=True)
 
 if __name__ == '__main__':
-    # 0.0.0.0 allows Render to expose the server publicly
-    socketio.run(app, host='0.0.0.0', port=5000)
+    # Render sets PORT in env variables
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, host='0.0.0.0', port=port)
