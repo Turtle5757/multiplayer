@@ -1,14 +1,17 @@
 from flask import Flask, request
 from flask_socketio import SocketIO, send
-import eventlet
 
-eventlet.monkey_patch()
+# IMPORTANT: Do not monkey patch on Render — use gevent instead of eventlet
+# eventlet.monkey_patch()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Use gevent instead of eventlet for better compatibility on Render
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 
 clients = {}  # sid -> username
+
 
 @socketio.on('join')
 def handle_join(data):
@@ -17,6 +20,7 @@ def handle_join(data):
     clients[sid] = username
     send(f"🔵 {username} joined the chat.", broadcast=True)
 
+
 @socketio.on('message')
 def handle_message(data):
     sid = request.sid
@@ -24,11 +28,16 @@ def handle_message(data):
     msg = data.get('msg', '')
     send(f"{username}: {msg}", broadcast=True)
 
+
 @socketio.on('disconnect')
 def handle_disconnect():
     sid = request.sid
     username = clients.pop(sid, "Unknown")
     send(f"🔴 {username} left the chat.", broadcast=True)
 
+
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000)
+    # Render sets PORT as an environment variable
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host='0.0.0.0', port=port)
