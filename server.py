@@ -10,6 +10,8 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 clients = {}  # sid -> username
 
+# --- Socket Handlers ---
+
 @socketio.on('join')
 def handle_join(data):
     username = data.get('username', 'Unknown')
@@ -30,5 +32,6 @@ def handle_disconnect():
     username = clients.pop(sid, "Unknown")
     send(f"🔴 {username} left the chat.", broadcast=True)
 
+# --- Run Server ---
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000)
