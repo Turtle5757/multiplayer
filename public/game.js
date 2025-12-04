@@ -15,7 +15,7 @@ let myPlayer = {
   color: "#" + Math.floor(Math.random()*16777215).toString(16)
 };
 
-const ws = new WebSocket(`wss://${window.location.hostname}/`);
+const ws = new WebSocket(`https://multiplayer-qetn.onrender.com`);
 
 ws.onopen = () => {
   ws.send(JSON.stringify({ type: "join", id: myId, player: myPlayer }));
