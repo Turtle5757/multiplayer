@@ -7,7 +7,20 @@ function rand(min, max) {
 }
 
 // === PLAYER ===
-let myId = Math.random().toString(36).substr(2, 5);
+let myId;
+let urlParams = new URLSearchParams(window.location.search);
+
+if (!urlParams.get("join")) {
+    myId = Math.random().toString(36).substr(2, 6);
+    window.history.replaceState({}, "", "?join=" + myId);
+} else {
+    myId = urlParams.get("join");
+}
+
+// Display the shareable link
+const shareLinkEl = document.getElementById("share-link");
+shareLinkEl.innerText = "Share this link for multiplayer:\n" + window.location.href;
+
 let players = {};
 
 players[myId] = {
@@ -39,7 +52,7 @@ function spawnMonster() {
 
 setInterval(spawnMonster, 3000);
 
-// === PeerJS Multiplayer ===
+// === PEERJS MULTIPLAYER ===
 const peer = new Peer(myId, { host: "peerjs.com", secure: true, port: 443 });
 
 peer.on("connection", conn => {
@@ -47,27 +60,22 @@ peer.on("connection", conn => {
 });
 
 function connectTo(id) {
-    const c = peer.connect(id);
-    c.on("open", () => c.send({ type: "syncPlayer", player: players[myId] }));
-    c.on("data", data => handleNetwork(data));
+    const conn = peer.connect(id);
+    conn.on("open", () => {
+        conn.send({ type: "syncPlayer", player: players[myId] });
+    });
+    conn.on("data", data => handleNetwork(data));
 }
 
 peer.on("open", () => {
-    if (location.search.includes("?join=")) {
-        let other = location.search.replace("?join=", "");
-        connectTo(other);
+    // Try to connect to any join ID in the URL that isn't self
+    let otherId = urlParams.get("join");
+    if (otherId && otherId !== myId) {
+        connectTo(otherId);
     }
-    history.replaceState({}, "", "?join=" + myId);
 });
 
-// === Send state to others ===
-function broadcast(data) {
-    for (let id in peer.connections) {
-        peer.connections[id].forEach(conn => conn.send(data));
-    }
-}
-
-// === HANDLE MULTIPLAYER EVENTS ===
+// === HANDLE NETWORK EVENTS ===
 function handleNetwork(data) {
     if (data.type === "syncPlayer") {
         players[data.player.id] = data.player;
@@ -84,7 +92,6 @@ function handleNetwork(data) {
 document.addEventListener("keydown", e => {
     let p = players[myId];
     const speed = 4;
-
     if (e.key === "w") p.y -= speed;
     if (e.key === "s") p.y += speed;
     if (e.key === "a") p.x -= speed;
@@ -98,20 +105,16 @@ document.addEventListener("mousedown", () => {
     let p = players[myId];
 
     monsters.forEach(m => {
-        let dist = Math.hypot(p.x - m.x, p.y - m.y);
-        if (dist < 50) {
-            m.hp -= rand(5, 10) * p.str;
+        if (Math.hypot(p.x - m.x, p.y - m.y) < 50) {
+            m.hp -= 10 * p.str;
 
-            // Monster dies
             if (m.hp <= 0) {
-                p.xp += 10;
                 m.hp = 0;
-
-                // Item drop
+                p.xp += 10;
                 p.inventory.push("Monster Tooth");
                 p.str += 0.1;
 
-                // Respawn
+                // Respawn monster
                 m.x = rand(50, 750);
                 m.y = rand(50, 450);
                 m.hp = m.maxHp;
@@ -123,7 +126,14 @@ document.addEventListener("mousedown", () => {
     broadcast({ type: "playerUpdate", player: p });
 });
 
-// === DRAW GAME ===
+// === BROADCAST FUNCTION ===
+function broadcast(data) {
+    for (let id in peer.connections) {
+        peer.connections[id].forEach(conn => conn.send(data));
+    }
+}
+
+// === GAME LOOP ===
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -135,19 +145,18 @@ function draw() {
         ctx.fill();
 
         ctx.fillStyle = "white";
-        ctx.fillText("HP: " + m.hp, m.x - 15, m.y - 20);
+        ctx.fillText("HP: " + Math.floor(m.hp), m.x - 15, m.y - 20);
     });
 
     // Draw players
     for (let id in players) {
         let p = players[id];
-
         ctx.fillStyle = p.color;
         ctx.fillRect(p.x, p.y, 20, 20);
 
         ctx.fillStyle = "white";
-        ctx.fillText(id, p.x - 5, p.y - 10);
-        ctx.fillText("HP " + p.hp, p.x - 5, p.y + 35);
+        ctx.fillText(p.id, p.x - 5, p.y - 10);
+        ctx.fillText("HP: " + Math.floor(p.hp), p.x - 5, p.y + 35);
     }
 
     requestAnimationFrame(draw);
