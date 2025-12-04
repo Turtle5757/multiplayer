@@ -11,7 +11,11 @@ canvas {
     margin-top: 20px;
 }
 
-#share-link {
-    font-weight: bold;
+#hud {
     margin-bottom: 10px;
+    text-align: center;
+}
+
+#inventory, #skills, #room-info, #share-link {
+    margin: 5px;
 }
