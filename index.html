@@ -6,10 +6,17 @@
 </head>
 <body>
     <h1>Multiplayer RPG</h1>
-    <p id="share-link" style="color: #0f0;"></p>
+    
+    <div id="hud">
+        <p id="skills">STR: 0 | DEF: 0 | MAG: 0 | Level: 1 | XP: 0 | Coins: 0</p>
+        <p id="inventory">Inventory: </p>
+        <p id="room-info">Room ID: </p>
+        <p id="share-link" style="color:#0f0;"></p>
+    </div>
+    
     <canvas id="game" width="800" height="500"></canvas>
 
-    <!-- PeerJS for multiplayer -->
+    <!-- PeerJS for P2P -->
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="game.js"></script>
 </body>
