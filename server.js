@@ -12,12 +12,12 @@ const wss = new WebSocket.Server({ server });
 let players = {};
 let monsters = [];
 
-// --- Monster/Boss setup ---
+// --- PvE Monsters/Bosses ---
 function spawnMonster(type = "monster") {
     return {
         id: Date.now() + Math.random(),
-        x: Math.random() * 760 + 20,
-        y: Math.random() * 560 + 20,
+        x: 410 + Math.random() * 380, // Right side = PvE
+        y: 10 + Math.random() * 580,
         type,
         hp: type === "boss" ? 50 : 20,
         attack: type === "boss" ? 5 : 2,
@@ -25,7 +25,7 @@ function spawnMonster(type = "monster") {
     };
 }
 
-// Spawn initial monsters
+// Spawn monsters
 for (let i = 0; i < 5; i++) monsters.push(spawnMonster());
 monsters.push(spawnMonster("boss")); // 1 boss
 
@@ -39,11 +39,12 @@ function broadcast() {
 // Monster AI
 function updateMonsters() {
     for (let m of monsters) {
-        // Move towards nearest player
         let nearest = null;
         let minDist = Infinity;
         for (let id in players) {
             const p = players[id];
+            // Only chase players in PvE zone
+            if (p.x < 400) continue;
             const dist = Math.hypot(p.x - m.x, p.y - m.y);
             if (dist < minDist) { minDist = dist; nearest = p; }
         }
@@ -56,13 +57,14 @@ function updateMonsters() {
                 m.y += (dy / dist) * m.speed;
             }
 
-            // Attack if close
             if (dist < 20) {
                 nearest.stats.hp -= m.attack;
                 if (nearest.stats.hp <= 0) {
-                    nearest.x = Math.random() * 760 + 20;
-                    nearest.y = Math.random() * 560 + 20;
-                    nearest.stats.hp = nearest.stats.maxHp;
+                    nearest.x = Math.random() * 380; // respawn PvP side
+                    nearest.y = Math.random() * 580;
+                    nearest.stats = { strength:5, defense:5, magic:5, hp:20, maxHp:20, speed:3 };
+                    nearest.xp = 0;
+                    nearest.skillPoints = 0;
                 }
             }
         }
@@ -71,25 +73,19 @@ function updateMonsters() {
 }
 setInterval(updateMonsters, 100);
 
-// WebSocket handling
+// WebSocket
 wss.on("connection", ws => {
     const id = Date.now().toString();
     players[id] = {
-        x: Math.random() * 760 + 20,
-        y: Math.random() * 560 + 20,
-        stats: { 
-            strength: 5, 
-            defense: 5, 
-            magic: 5, 
-            hp: 20, 
-            maxHp: 20, 
-            speed: 3 
-        },
-        items: [],
-        skills: []
+        x: Math.random() * 380, // PvP zone
+        y: Math.random() * 580,
+        stats: { strength:5, defense:5, magic:5, hp:20, maxHp:20, speed:3 },
+        xp:0,
+        skillPoints:0,
+        skills:[]
     };
 
-    ws.send(JSON.stringify({ type: "init", id, players, monsters }));
+    ws.send(JSON.stringify({ type:"init", id, players, monsters }));
 
     ws.on("message", msg => {
         const data = JSON.parse(msg);
@@ -97,43 +93,58 @@ wss.on("connection", ws => {
         if (!player) return;
 
         // Movement
-        if (data.type === "update") player.x = data.x || player.x, player.y = data.y || player.y;
+        if (data.type === "update") {
+            player.x = data.x ?? player.x;
+            player.y = data.y ?? player.y;
+        }
 
-        // Training stats
+        // Training at station
         if (data.type === "train") {
             if (data.stat === "hp") {
-                player.stats.maxHp += 5;
-                player.stats.hp = player.stats.maxHp;
+                player.stats.maxHp += 2; // partial HP gain
+                player.stats.hp = Math.min(player.stats.hp + 5, player.stats.maxHp);
             } else {
                 player.stats[data.stat] += 1;
             }
+            player.xp += 5;
+            if (player.xp >= 20) { player.skillPoints++; player.xp = 0; }
         }
 
-        // Attack another player
+        // Attack PvP
         if (data.type === "attack") {
             const target = players[data.targetId];
-            if (target) {
-                const dmg = Math.max(player.stats.strength - target.stats.defense, 1);
+            if (target && target.x < 400) { // only in PvP zone
+                const dmg = Math.max(player.stats.strength - target.stats.defense,1);
                 target.stats.hp -= dmg;
                 if (target.stats.hp <= 0) {
-                    target.x = Math.random() * 760 + 20;
-                    target.y = Math.random() * 560 + 20;
-                    target.stats.hp = target.stats.maxHp;
+                    target.x = Math.random()*380;
+                    target.y = Math.random()*580;
+                    target.stats = { strength:5, defense:5, magic:5, hp:20, maxHp:20, speed:3 };
+                    target.xp = 0;
+                    target.skillPoints = 0;
                 }
             }
         }
 
-        // Skill use (example)
-        if (data.type === "skill") {
-            // Add your skill logic here
+        // Attack monsters
+        if (data.type === "attackMonster") {
+            const monster = monsters.find(m=>m.id===data.monsterId);
+            if (monster) {
+                monster.hp -= player.stats.strength;
+                if (monster.hp <= 0) {
+                    player.xp += 10;
+                    if (player.xp >= 20) { player.skillPoints++; player.xp=0; }
+                    // respawn monster
+                    const idx = monsters.indexOf(monster);
+                    monsters[idx] = spawnMonster(monster.type);
+                }
+            }
         }
-
-        // Item pickup / logic can be added here
 
         broadcast();
     });
 
-    ws.on("close", () => delete players[id]);
+    ws.on("close", ()=>delete players[id]);
 });
 
-server.listen(process.env.PORT || 10000, "0.0.0.0", () => console.log("Server running"));
+server.listen(process.env.PORT||10000,"0.0.0.0",()=>console.log("Server running"));
