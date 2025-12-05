@@ -1,10 +1,11 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const ws = new WebSocket("wss://multiplayer-qetn.onrender.com");
+const ws = new WebSocket("wss://" + location.host);
 
 let playerId = null;
 let players = {};
+let items = [];
 
 ws.onmessage = (msg) => {
     const data = JSON.parse(msg.data);
@@ -12,21 +13,22 @@ ws.onmessage = (msg) => {
     if (data.type === "init") {
         playerId = data.id;
         players = data.players;
+        items = data.items;
     }
 
     if (data.type === "players") {
         players = data.players;
+        items = data.items;
     }
 
     draw();
 };
 
-// Training functions
 function train(stat) {
     ws.send(JSON.stringify({ type: "train", stat }));
 }
 
-// Movement controls
+// Movement
 document.addEventListener("keydown", (e) => {
     if (!playerId) return;
     const update = { ...players[playerId] };
@@ -37,16 +39,16 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "ArrowRight") update.x += 5;
 
     ws.send(JSON.stringify({ type: "update", update }));
+    ws.send(JSON.stringify({ type: "pickup" })); // pickup nearby items
 });
 
-// Attack on click (PvP)
+// Attack on click
 canvas.addEventListener("click", (e) => {
     if (!playerId) return;
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // Check if clicked on another player
     for (const id in players) {
         if (id === playerId) continue;
         const p = players[id];
@@ -60,14 +62,20 @@ canvas.addEventListener("click", (e) => {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Draw items
+    for (const it of items) {
+        ctx.fillStyle = "yellow";
+        ctx.fillRect(it.x, it.y, 10, 10);
+    }
+
+    // Draw players
     for (const id in players) {
         const p = players[id];
         ctx.fillStyle = id === playerId ? "red" : "blue";
         ctx.fillRect(p.x, p.y, 20, 20);
 
-        // Draw stats above player
         ctx.fillStyle = "white";
         ctx.font = "10px sans-serif";
-        ctx.fillText(`STR:${p.stats.strength} DEF:${p.stats.defense} MAG:${p.stats.magic}`, p.x-10, p.y-5);
+        ctx.fillText(`STR:${p.stats.strength} DEF:${p.stats.defense} MAG:${p.stats.magic} HP:${p.stats.hp}`, p.x-10, p.y-5);
     }
 }
