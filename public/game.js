@@ -5,7 +5,6 @@ const ws = new WebSocket("wss://" + location.host);
 
 let playerId = null;
 let players = {};
-let items = [];
 
 ws.onmessage = (msg) => {
     const data = JSON.parse(msg.data);
@@ -13,12 +12,10 @@ ws.onmessage = (msg) => {
     if (data.type === "init") {
         playerId = data.id;
         players = data.players;
-        items = data.items;
     }
 
     if (data.type === "players") {
         players = data.players;
-        items = data.items;
     }
 
     draw();
@@ -39,7 +36,6 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "ArrowRight") update.x += 5;
 
     ws.send(JSON.stringify({ type: "update", update }));
-    ws.send(JSON.stringify({ type: "pickup" })); // pickup nearby items
 });
 
 // Attack on click
@@ -62,13 +58,6 @@ canvas.addEventListener("click", (e) => {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw items
-    for (const it of items) {
-        ctx.fillStyle = "yellow";
-        ctx.fillRect(it.x, it.y, 10, 10);
-    }
-
-    // Draw players
     for (const id in players) {
         const p = players[id];
         ctx.fillStyle = id === playerId ? "red" : "blue";
