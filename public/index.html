@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Multiplayer RPG</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Multiplayer RPG</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="hud">
-        <button onclick="train('strength')">Train Strength</button>
-        <button onclick="train('defense')">Train Defense</button>
-        <button onclick="train('magic')">Train Magic</button>
-        <button onclick="train('hp')">Train Health</button>
-    </div>
-    <canvas id="game" width="800" height="600"></canvas>
-    <script src="game.js"></script>
+<canvas id="game" width="800" height="600"></canvas>
+<div id="skillTree" style="position:absolute; top:10px; right:10px; background:#333; color:white; padding:10px; width:200px;">
+<h3>Skill Points: <span id="skillPts">0</span></h3>
+<button onclick="unlockSkill('strength')">+Strength</button>
+<button onclick="unlockSkill('defense')">+Defense</button>
+<button onclick="unlockSkill('magic')">+Magic</button>
+</div>
+<script src="game.js"></script>
 </body>
 </html>
