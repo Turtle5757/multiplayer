@@ -2,67 +2,57 @@ const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 const ws=new WebSocket("wss://"+location.host);
 
-let playerId=null;
-let players={}, monsters=[];
+let playerId=null, players={}, monsters=[];
 let keys={w:false,a:false,s:false,d:false};
 const MAP_WIDTH=800, MAP_HEIGHT=600, PVP_ZONE=400;
 
-let skillTreeVisible=false;
+let skillTreeVisible=false, inventoryVisible=false;
 
-function toggleSkillTree(){
-    skillTreeVisible=!skillTreeVisible;
-    document.getElementById("skillTree").style.display=skillTreeVisible?"block":"none";
-}
+function toggleSkillTree(){ skillTreeVisible=!skillTreeVisible; document.getElementById("skillTree").style.display=skillTreeVisible?"block":"none"; }
+function toggleInventory(){ inventoryVisible=!inventoryVisible; document.getElementById("inventory").style.display=inventoryVisible?"block":"none"; }
 
-// --- Login/Register ---
-document.getElementById("loginBtn").onclick=()=>{ login(); };
-document.getElementById("registerBtn").onclick=()=>{ register(); };
+document.getElementById("loginBtn").onclick=()=>login();
+document.getElementById("registerBtn").onclick=()=>register();
 
-function login(){
-    ws.send(JSON.stringify({type:"login", username:document.getElementById("usernameInput").value, password:document.getElementById("passwordInput").value}));
-}
-function register(){
-    ws.send(JSON.stringify({type:"register", username:document.getElementById("usernameInput").value, password:document.getElementById("passwordInput").value}));
-}
+function login(){ ws.send(JSON.stringify({type:"login", username:document.getElementById("usernameInput").value, password:document.getElementById("passwordInput").value})); }
+function register(){ ws.send(JSON.stringify({type:"register", username:document.getElementById("usernameInput").value, password:document.getElementById("passwordInput").value})); }
 
-// WASD movement
 document.addEventListener("keydown", e=>{if(e.key.toLowerCase() in keys) keys[e.key.toLowerCase()]=true;});
 document.addEventListener("keyup", e=>{if(e.key.toLowerCase() in keys) keys[e.key.toLowerCase()]=false;});
 
 function movePlayer(){
     if(!playerId) return;
-    const p=players[playerId];
-    if(!p) return;
+    const p=players[playerId]; if(!p) return;
     const speed=p.stats.speed||3;
     if(keys.w) p.y-=speed;
     if(keys.s) p.y+=speed;
     if(keys.a) p.x-=speed;
     if(keys.d) p.x+=speed;
-
     p.x=Math.max(0,Math.min(MAP_WIDTH-20,p.x));
     p.y=Math.max(0,Math.min(MAP_HEIGHT-20,p.y));
-
     ws.send(JSON.stringify({type:"update", x:p.x, y:p.y}));
 }
 setInterval(movePlayer,50);
 
-// Skill upgrade
 function upgrade(stat){ ws.send(JSON.stringify({type:"upgrade", stat})); }
 
-// Click to attack
+function toggleEquip(name){ ws.send(JSON.stringify({type:"equipItem", name})); }
+function useItem(name){ ws.send(JSON.stringify({type:"useItem", name})); }
+
 canvas.addEventListener("click", e=>{
     if(!playerId) return;
     const rect=canvas.getBoundingClientRect();
-    const mouseX=e.clientX-rect.left;
-    const mouseY=e.clientY-rect.top;
+    const mouseX=e.clientX-rect.left, mouseY=e.clientY-rect.top;
 
-    for(const id in players){
-        if(id===playerId) continue;
+    // Attack players
+    for(const id in players){ if(id===playerId) continue;
         const p=players[id];
         if(mouseX>=p.x && mouseX<=p.x+20 && mouseY>=p.y && mouseY<=p.y+20){
             ws.send(JSON.stringify({type:"attack", targetId:id}));
         }
     }
+
+    // Attack monsters
     for(const m of monsters){
         if(mouseX>=m.x && mouseX<=m.x+20 && mouseY>=m.y && mouseY<=m.y+20){
             ws.send(JSON.stringify({type:"attackMonster", monsterId:m.id}));
@@ -76,11 +66,10 @@ ws.onmessage=msg=>{
     if(data.type==="askLogin"){ document.getElementById("login").style.display="block"; }
     if(data.type==="error"){ document.getElementById("loginMsg").innerText=data.message; }
     if(data.type==="registered"){ document.getElementById("loginMsg").innerText="Registered! Login now."; }
-    if(data.type==="init"){ playerId=data.id; players=data.players; monsters=data.monsters; document.getElementById("login").style.display="none"; updateHUD(); }
-    if(data.type==="state"){ players=data.players; monsters=data.monsters; updateHUD(); draw(); }
+    if(data.type==="init"){ playerId=data.id; players=data.players; monsters=data.monsters; document.getElementById("login").style.display="none"; updateHUD(); updateInventory(); draw(); }
+    if(data.type==="state"){ players=data.players; monsters=data.monsters; updateHUD(); updateInventory(); draw(); }
 };
 
-// Update HUD
 function updateHUD(){
     const p=players[playerId]; if(!p) return;
     document.getElementById("level").innerText=p.level;
@@ -89,11 +78,21 @@ function updateHUD(){
     document.getElementById("skillPts").innerText=p.skillPoints;
 }
 
-// Draw
+function updateInventory(){
+    const p=players[playerId]; if(!p) return;
+    const list=document.getElementById("invList");
+    list.innerHTML="";
+    p.inventory.forEach(it=>{
+        const btn=document.createElement("button");
+        btn.innerText=it.name+(it.equipped?" [E]":"");
+        btn.onclick=()=>{ if(it.type==="potion") useItem(it.name); else toggleEquip(it.name); };
+        list.appendChild(btn);
+    });
+}
+
+// Draw function
 function draw(){
     ctx.clearRect(0,0,MAP_WIDTH,MAP_HEIGHT);
-
-    // Zones
     ctx.fillStyle="#222"; ctx.fillRect(0,0,PVP_ZONE,MAP_HEIGHT);
     ctx.fillStyle="#333"; ctx.fillRect(PVP_ZONE,0,MAP_WIDTH-PVP_ZONE,MAP_HEIGHT);
 
@@ -111,9 +110,9 @@ function draw(){
         ctx.fillStyle=id===playerId?"red":"blue";
         ctx.fillRect(p.x,p.y,20,20);
         ctx.fillStyle="white"; ctx.font="10px sans-serif";
-        ctx.fillText(p.username, p.x-5,p.y-10);
+        ctx.fillText(p.username,p.x-5,p.y-10);
         if(id===playerId){
-            ctx.fillText(`STR:${p.stats.strength} DEF:${p.stats.defense} MAG:${p.stats.magic} HP:${p.stats.hp}/${p.stats.maxHp}`, p.x-40,p.y+30);
+            ctx.fillText(`STR:${p.stats.strength} DEF:${p.stats.defense} MAG:${p.stats.magic} HP:${p.stats.hp}/${p.stats.maxHp}`, p.x-50,p.y+30);
         }
     }
 }
