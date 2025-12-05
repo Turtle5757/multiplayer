@@ -1,12 +1,24 @@
 body {
     margin: 0;
-    background: #222;
-    overflow: hidden;
+    background: #333;
+    color: white;
+    font-family: sans-serif;
 }
 
 canvas {
     display: block;
     margin: auto;
-    background: #000;
+    background: #111;
     border: 2px solid white;
+}
+
+#hud {
+    text-align: center;
+    margin: 10px;
+}
+
+button {
+    margin: 5px;
+    padding: 10px;
+    font-size: 14px;
 }
