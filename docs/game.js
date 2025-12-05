@@ -1,4 +1,6 @@
-// WebSocket connection to your Render backend
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
 const ws = new WebSocket("wss://multiplayer-qetn.onrender.com");
 
 let playerId = null;
@@ -19,30 +21,53 @@ ws.onmessage = (msg) => {
     draw();
 };
 
+// Training functions
+function train(stat) {
+    ws.send(JSON.stringify({ type: "train", stat }));
+}
+
 // Movement controls
 document.addEventListener("keydown", (e) => {
     if (!playerId) return;
-
-    let update = { ...players[playerId] };
+    const update = { ...players[playerId] };
 
     if (e.key === "ArrowUp") update.y -= 5;
     if (e.key === "ArrowDown") update.y += 5;
     if (e.key === "ArrowLeft") update.x -= 5;
     if (e.key === "ArrowRight") update.x += 5;
 
-    ws.send(JSON.stringify({
-        type: "update",
-        update
-    }));
+    ws.send(JSON.stringify({ type: "update", update }));
+});
+
+// Attack on click (PvP)
+canvas.addEventListener("click", (e) => {
+    if (!playerId) return;
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Check if clicked on another player
+    for (const id in players) {
+        if (id === playerId) continue;
+        const p = players[id];
+        if (mouseX >= p.x && mouseX <= p.x + 20 &&
+            mouseY >= p.y && mouseY <= p.y + 20) {
+            ws.send(JSON.stringify({ type: "attack", targetId: id }));
+        }
+    }
 });
 
 function draw() {
-    const c = document.getElementById("game").getContext("2d");
-    c.clearRect(0, 0, 800, 600);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    for (let id in players) {
+    for (const id in players) {
         const p = players[id];
-        c.fillStyle = id === playerId ? "red" : "blue";
-        c.fillRect(p.x, p.y, 20, 20);
+        ctx.fillStyle = id === playerId ? "red" : "blue";
+        ctx.fillRect(p.x, p.y, 20, 20);
+
+        // Draw stats above player
+        ctx.fillStyle = "white";
+        ctx.font = "10px sans-serif";
+        ctx.fillText(`STR:${p.stats.strength} DEF:${p.stats.defense} MAG:${p.stats.magic}`, p.x-10, p.y-5);
     }
 }
