@@ -8,14 +8,16 @@
 <body>
 <canvas id="game" width="800" height="600"></canvas>
 
-<div id="hud" style="position:absolute; top:10px; left:10px; color:white;">
+<div id="hud">
     <div>Level: <span id="level">1</span></div>
     <div>XP: <span id="xp">0</span>/20</div>
     <div>Gold: <span id="gold">0</span></div>
     <div>Skill Points: <span id="skillPts">0</span></div>
+    <button onclick="toggleSkillTree()">Skill Tree</button>
+    <button onclick="toggleInventory()">Inventory</button>
 </div>
 
-<div id="skillTree" style="position:absolute; top:10px; right:10px; background:#333; color:white; padding:10px; width:220px; display:none;">
+<div id="skillTree" class="panel">
 <h3>Skill Tree</h3>
 <button onclick="upgrade('strength')">Strength</button>
 <button onclick="upgrade('defense')">Defense</button>
@@ -27,13 +29,19 @@
 <button onclick="toggleSkillTree()">Close</button>
 </div>
 
-<div id="login" style="position:absolute; top:40%; left:50%; transform:translate(-50%,-50%); color:white; background:#222; padding:20px;">
+<div id="inventory" class="panel">
+<h3>Inventory</h3>
+<div id="invList"></div>
+<button onclick="toggleInventory()">Close</button>
+</div>
+
+<div id="login">
 <h3>Login or Register</h3>
 <input id="usernameInput" placeholder="Username">
 <input id="passwordInput" type="password" placeholder="Password">
 <button id="loginBtn">Login</button>
 <button id="registerBtn">Register</button>
-<div id="loginMsg" style="color:red;"></div>
+<div id="loginMsg"></div>
 </div>
 
 <script src="game.js"></script>
