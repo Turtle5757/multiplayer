@@ -1,70 +1,74 @@
 const express = require("express");
-const app = express();
-const http = require("http").createServer(app);
+const http = require("http");
 const WebSocket = require("ws");
-const wss = new WebSocket.Server({ server: http });
+const path = require("path");
 
-app.use(express.static("public")); // serve frontend
+const app = express();
+
+// Serve frontend
+app.use(express.static(path.join(__dirname, "public")));
+
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
 let players = {};
-let monsters = [];
 
-// spawn some monsters for demo
-function spawnMonsters() {
-  monsters = [
-    { id: "m1", x: 100, y: 100, hp: 20 },
-    { id: "m2", x: 400, y: 200, hp: 30 },
-  ];
+function broadcastPlayers() {
+    const data = JSON.stringify({ type: "players", players });
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) client.send(data);
+    });
 }
-spawnMonsters();
 
 wss.on("connection", (ws) => {
-  console.log("Player connected");
+    const id = Date.now().toString();
+    players[id] = {
+        x: Math.random() * 700 + 50,
+        y: Math.random() * 500 + 50,
+        stats: { strength: 5, defense: 5, magic: 5 },
+        items: []
+    };
 
-  ws.on("message", (msg) => {
-    const data = JSON.parse(msg);
+    ws.send(JSON.stringify({ type: "init", id, players }));
 
-    switch (data.type) {
-      case "join":
-        players[data.id] = data.player;
-        ws.id = data.id;
-        broadcast({ type: "syncPlayers", players, monsters });
-        break;
+    ws.on("message", (msg) => {
+        const data = JSON.parse(msg);
 
-      case "update":
-        if (ws.id) players[ws.id] = data.player;
-        broadcast({ type: "syncPlayers", players, monsters });
-        break;
-
-      case "attack":
-        const target = monsters.find((m) => m.id === data.targetId);
-        if (target) {
-          target.hp -= data.damage;
-          if (target.hp <= 0) {
-            // reward player
-            players[ws.id].coins += 10;
-            // respawn monster
-            target.hp = Math.floor(Math.random() * 20) + 10;
-          }
-          broadcast({ type: "syncPlayers", players, monsters });
+        if (data.type === "update") {
+            players[id] = data.update;
+            broadcastPlayers();
         }
-        break;
-    }
-  });
 
-  ws.on("close", () => {
-    if (ws.id) delete players[ws.id];
-    broadcast({ type: "syncPlayers", players, monsters });
-  });
+        if (data.type === "train") {
+            // Training increases stats
+            const stat = data.stat;
+            players[id].stats[stat] += 1;
+            broadcastPlayers();
+        }
 
-  ws.send(JSON.stringify({ type: "syncPlayers", players, monsters }));
+        if (data.type === "attack") {
+            const targetId = data.targetId;
+            if (!players[targetId]) return;
+
+            // Simple combat calculation
+            const attacker = players[id];
+            const defender = players[targetId];
+
+            const dmg = Math.max(attacker.stats.strength - defender.stats.defense, 1);
+            defender.stats.defense -= dmg;
+
+            if (defender.stats.defense <= 0) {
+                defender.x = Math.random() * 700 + 50;
+                defender.y = Math.random() * 500 + 50;
+                defender.stats.defense = 5;
+            }
+
+            broadcastPlayers();
+        }
+    });
+
+    ws.on("close", () => delete players[id]);
 });
 
-function broadcast(data) {
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify(data));
-  });
-}
-
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, "0.0.0.0", () => console.log(`Server running on port ${PORT}`));
