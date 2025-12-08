@@ -1,8 +1,10 @@
-body { margin:0; background:#222; font-family:sans-serif; }
-canvas { display:block; margin:auto; background:#111; border:2px solid white; }
-#hud { position:absolute; top:10px; left:10px; color:white; }
-.panel { position:absolute; top:10px; right:10px; background:#333; color:white; padding:10px; width:220px; display:none; }
-.panel button { margin:5px; padding:5px; width:100px; }
-#login { position:absolute; top:40%; left:50%; transform:translate(-50%,-50%); color:white; background:#222; padding:20px; }
-input { padding:5px; margin:5px; }
-button { cursor:pointer; }
+body { margin:0; background:#111; font-family:Arial,Helvetica,sans-serif; color:#fff; }
+canvas { display:block; margin:0 auto; background:#0b0b0b; border:2px solid #444; }
+#hud { position:absolute; top:8px; left:8px; background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; }
+.panel { position:absolute; top:8px; right:8px; background:#222; color:white; padding:10px; width:260px; border-radius:6px; box-shadow:0 0 8px #000; }
+#invList button { margin:4px; padding:6px; width:100%; text-align:left; }
+#login { left:50%; top:50%; transform:translate(-50%,-50%); width:320px; }
+#skillNodes { display:flex; flex-wrap:wrap; gap:6px; }
+.skillNode { background:#333; padding:8px; border-radius:6px; text-align:center; width:80px; cursor:pointer; }
+.skillNode.locked { opacity:0.4; }
+.small { font-size:12px; color:#ddd; margin-top:6px; }
