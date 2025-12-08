@@ -1,8 +1,8 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>Multiplayer RPG</title>
+  <meta charset="utf-8">
+  <title>Multiplayer RPG — Inventory + Skill Tree</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -10,34 +10,29 @@
 
   <div id="hud">
     <div>Level: <span id="level">1</span></div>
-    <div>XP: <span id="xp">0</span>/20</div>
+    <div>XP: <span id="xp">0</span></div>
     <div>Gold: <span id="gold">0</span></div>
     <div>Skill Points: <span id="skillPts">0</span></div>
-    <button id="skillBtn">Skill Tree</button>
-    <button id="invBtn">Inventory</button>
+    <button id="openInv">Inventory</button>
+    <button id="openSkill">Skill Tree</button>
   </div>
 
-  <div id="skillTree" class="panel" style="display:none;">
+  <!-- Inventory panel -->
+  <div id="inventoryPanel" class="panel" style="display:none;">
+    <h3>Inventory (5 slots)</h3>
+    <div id="invSlots"></div>
+    <div id="invActions">
+      <button id="closeInv">Close</button>
+    </div>
+    <div class="small">Click item to Equip / Use (potions)</div>
+  </div>
+
+  <!-- Skill tree panel -->
+  <div id="skillPanel" class="panel" style="display:none;">
     <h3>Skill Tree</h3>
     <div id="skillNodes"></div>
     <button id="closeSkill">Close</button>
-  </div>
-
-  <div id="inventory" class="panel" style="display:none;">
-    <h3>Inventory (5 slots)</h3>
-    <div id="invList"></div>
-    <button id="closeInv">Close</button>
-  </div>
-
-  <div id="login" class="panel">
-    <h3>Login / Register</h3>
-    <input id="usernameInput" placeholder="username">
-    <input id="passwordInput" placeholder="password" type="password">
-    <div style="margin-top:8px;">
-      <button id="loginBtn">Login</button>
-      <button id="registerBtn">Register</button>
-    </div>
-    <div id="loginMsg" style="color:#f88;margin-top:6px;"></div>
+    <div class="small">Unlock nodes with Skill Points</div>
   </div>
 
   <script src="game.js"></script>
