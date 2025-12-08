@@ -1,49 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Multiplayer RPG</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <title>Multiplayer RPG</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<canvas id="game" width="800" height="600"></canvas>
+  <canvas id="game" width="800" height="600"></canvas>
 
-<div id="hud">
+  <div id="hud">
     <div>Level: <span id="level">1</span></div>
     <div>XP: <span id="xp">0</span>/20</div>
     <div>Gold: <span id="gold">0</span></div>
     <div>Skill Points: <span id="skillPts">0</span></div>
-    <button onclick="toggleSkillTree()">Skill Tree</button>
-    <button onclick="toggleInventory()">Inventory</button>
-</div>
+    <button id="skillBtn">Skill Tree</button>
+    <button id="invBtn">Inventory</button>
+  </div>
 
-<div id="skillTree" class="panel">
-<h3>Skill Tree</h3>
-<button onclick="upgrade('strength')">Strength</button>
-<button onclick="upgrade('defense')">Defense</button>
-<button onclick="upgrade('magic')">Magic</button>
-<button onclick="upgrade('speed')">Speed</button>
-<button onclick="upgrade('meleeRange')">Melee Range</button>
-<button onclick="upgrade('range')">Ranged Range</button>
-<button onclick="upgrade('maxHp')">Max HP</button>
-<button onclick="toggleSkillTree()">Close</button>
-</div>
+  <div id="skillTree" class="panel" style="display:none;">
+    <h3>Skill Tree</h3>
+    <div id="skillNodes"></div>
+    <button id="closeSkill">Close</button>
+  </div>
 
-<div id="inventory" class="panel">
-<h3>Inventory</h3>
-<div id="invList"></div>
-<button onclick="toggleInventory()">Close</button>
-</div>
+  <div id="inventory" class="panel" style="display:none;">
+    <h3>Inventory (5 slots)</h3>
+    <div id="invList"></div>
+    <button id="closeInv">Close</button>
+  </div>
 
-<div id="login">
-<h3>Login or Register</h3>
-<input id="usernameInput" placeholder="Username">
-<input id="passwordInput" type="password" placeholder="Password">
-<button id="loginBtn">Login</button>
-<button id="registerBtn">Register</button>
-<div id="loginMsg"></div>
-</div>
+  <div id="login" class="panel">
+    <h3>Login / Register</h3>
+    <input id="usernameInput" placeholder="username">
+    <input id="passwordInput" placeholder="password" type="password">
+    <div style="margin-top:8px;">
+      <button id="loginBtn">Login</button>
+      <button id="registerBtn">Register</button>
+    </div>
+    <div id="loginMsg" style="color:#f88;margin-top:6px;"></div>
+  </div>
 
-<script src="game.js"></script>
+  <script src="game.js"></script>
 </body>
 </html>
