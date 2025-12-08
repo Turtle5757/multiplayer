@@ -1,39 +1,61 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Multiplayer RPG — Inventory + Skill Tree</title>
+  <meta charset="utf-8" />
+  <title>IdleRPG — Sprites, Crafting, Trading</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <canvas id="game" width="800" height="600"></canvas>
+  <canvas id="game" width="900" height="600"></canvas>
 
   <div id="hud">
-    <div>Level: <span id="level">1</span></div>
-    <div>XP: <span id="xp">0</span></div>
-    <div>Gold: <span id="gold">0</span></div>
-    <div>Skill Points: <span id="skillPts">0</span></div>
-    <button id="openInv">Inventory</button>
-    <button id="openSkill">Skill Tree</button>
+    <button id="skillBtn">Skill Tree</button>
+    <button id="invBtn">Inventory</button>
+    <button id="craftBtn">Crafting</button>
+    <button id="tradeBtn">Trade</button>
+    <label>Auto <input id="autoToggle" type="checkbox"></label>
+  </div>
+
+  <div id="login" class="panel">
+    <h3>Login / Register</h3>
+    <input id="usernameInput" placeholder="username"><br>
+    <input id="passwordInput" type="password" placeholder="password"><br>
+    <button id="loginBtn">Login</button>
+    <button id="registerBtn">Register</button>
+    <div id="loginMsg"></div>
   </div>
 
   <!-- Inventory panel -->
-  <div id="inventoryPanel" class="panel" style="display:none;">
+  <div id="inventory" class="panel" style="display:none;">
     <h3>Inventory (5 slots)</h3>
-    <div id="invSlots"></div>
-    <div id="invActions">
-      <button id="closeInv">Close</button>
-    </div>
-    <div class="small">Click item to Equip / Use (potions)</div>
+    <div id="invList"></div>
+    <button id="closeInv">Close</button>
   </div>
 
-  <!-- Skill tree panel -->
-  <div id="skillPanel" class="panel" style="display:none;">
-    <h3>Skill Tree</h3>
-    <div id="skillNodes"></div>
-    <button id="closeSkill">Close</button>
-    <div class="small">Unlock nodes with Skill Points</div>
+  <!-- Crafting panel -->
+  <div id="crafting" class="panel" style="display:none;">
+    <h3>Crafting</h3>
+    <div id="recipes"></div>
+    <div id="craftMsg" style="color:#f88"></div>
+    <button id="closeCraft">Close</button>
   </div>
+
+  <!-- Trade panel -->
+  <div id="trade" class="panel" style="display:none;">
+    <h3>Trade</h3>
+    <div id="playersList"></div>
+    <div id="myOffer">
+      <div>Offer items (click to select in inventory)</div>
+      <div id="myOfferList"></div>
+      Gold: <input id="offerGold" type="number" value="0" min="0">
+    </div>
+    <div id="tradeActions">
+      <button id="sendTradeBtn">Send Trade</button>
+      <button id="closeTrade">Close</button>
+    </div>
+  </div>
+
+  <div id="offlineNotice" class="panel" style="display:none;"></div>
 
   <script src="game.js"></script>
 </body>
