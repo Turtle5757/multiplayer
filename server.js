@@ -473,15 +473,7 @@ function spawnGroundItem(x,y,template){
   return it;
 }
 
-// (Because we used BASE_ITEMS earlier in earlier files; re-declare for compatibility)
-const BASE_ITEMS = [
-  { key:"bronze_sword", name:"Bronze Sword", type:"weapon", base:{ strength:2 }, icon:"🗡️" },
-  { key:"staff", name:"Oak Staff", type:"weapon", base:{ magic:2 }, icon:"✨" },
-  { key:"leather_armor", name:"Leather Armor", type:"armor", base:{ defense:2 }, icon:"🛡️" },
-  { key:"hp_potion", name:"Health Potion", type:"potion", base:{ heal:25 }, icon:"🧪" },
-  { key:"iron_ingot", name:"Iron Ingot", type:"material", base:{}, icon:"⛓️" },
-  { key:"wood", name:"Wood", type:"material", base:{}, icon:"🪵" }
-];
+
 
 console.log("Server ready");
 server.listen(process.env.PORT||10000,"0.0.0.0");
