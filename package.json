@@ -1,5 +1,5 @@
 {
-  "name": "idleon-like-multiplayer",
+  "name": "idleon-like-full",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
