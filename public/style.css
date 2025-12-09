@@ -1,7 +1,8 @@
 body{ margin:0; font-family:Arial; background:#07121a; color:#fff; }
-canvas{ display:block; margin:6px auto; background:#041219; border:2px solid #123; }
-.panel{ position:absolute; top:70px; right:20px; width:320px; background:#1b2b2f; padding:10px; border-radius:6px; box-shadow:0 0 8px #000; }
-#hud{ position:absolute; top:8px; left:8px; background:rgba(0,0,0,0.35); padding:8px; border-radius:6px; }
+canvas{ display:block; margin:12px auto; background:#041219; border:2px solid #123; }
+#hud{ position:absolute; top:8px; left:8px; right:8px; display:flex; justify-content:space-between; align-items:center; pointer-events:auto; }
+.panel{ position:absolute; top:80px; right:20px; width:320px; background:#1b2b2f; padding:10px; border-radius:6px; box-shadow:0 0 8px #000; }
 button{ cursor:pointer; margin:4px; }
 #invList button{ display:block; width:100%; text-align:left; margin:6px 0; padding:6px; }
 .recipe{ border:1px solid #333; padding:6px; margin:6px 0; border-radius:4px; }
+#statsPanel{ background:rgba(255,255,255,0.03); padding:6px; border-radius:6px; margin-top:6px; }
